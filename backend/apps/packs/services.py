@@ -1444,9 +1444,17 @@ def _import_pack(
 
     try:
         with transaction.atomic():
-            # Hard delete existing items if forcing reinstall
-            if existing and force:
-                _hard_delete_pack_items(existing)
+            # NAVE PATCH (precogly/precogly#318): do NOT hard-delete-and-
+            # recreate on force-reimport. _load_components/_load_threats/
+            # _load_countermeasures already update_or_create keyed by
+            # qualified_slug, so leaving existing rows in place lets that
+            # work as designed and keeps instance-level FKs (component_library,
+            # threat_library) intact across a reimport instead of silently
+            # nulling them. Trade-off: items removed from the pack between
+            # versions now linger as stale rows instead of being cleaned up.
+            # Remove this patch once precogly/precogly#318 is fixed upstream.
+            # if existing and force:
+            #     _hard_delete_pack_items(existing)
 
             # Create/update LibraryPack
             library_pack = _create_or_update_pack(pack_data)
