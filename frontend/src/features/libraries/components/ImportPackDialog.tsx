@@ -4,6 +4,7 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
+  RefreshCw,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -34,6 +35,7 @@ export function ImportPackDialog({
     pack?.relativePath ?? null
   )
   const [selectedOverlays, setSelectedOverlays] = useState<Set<string>>(new Set())
+  const isReimport = pack?.isImported ?? false
 
   // Reset selection when pack changes
   useEffect(() => {
@@ -75,13 +77,27 @@ export function ImportPackDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Import {pack?.name}</DialogTitle>
+          <DialogTitle>{isReimport ? `Update ${pack?.name}` : `Import ${pack?.name}`}</DialogTitle>
           <DialogDescription>
             {hasOverlays
               ? 'Select which compliance framework overlays to include with this pack.'
-              : `Import ${pack?.name} to make its content available.`}
+              : isReimport
+                ? `Reimport ${pack?.name} to pull in the latest changes from source.`
+                : `Import ${pack?.name} to make its content available.`}
           </DialogDescription>
         </DialogHeader>
+
+        {isReimport && (
+          <div className="flex items-start gap-2 rounded-md border border-amber-600/40 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400">
+            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+            <p>
+              This pack is already imported. Reimporting updates its content in place and
+              can affect any live threat model currently using it — components, threats,
+              or countermeasures removed upstream may be removed from those models too.
+              Double-check before proceeding, especially against an active engagement.
+            </p>
+          </div>
+        )}
 
         {(pack?.dependsOn?.length ?? 0) > 0 && (
           <div className="space-y-2 py-2">
@@ -170,9 +186,13 @@ export function ImportPackDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleImport}>
-            <Download className="mr-2 h-4 w-4" />
-            Import
+          <Button onClick={handleImport} variant={isReimport ? 'destructive' : 'default'}>
+            {isReimport ? (
+              <RefreshCw className="mr-2 h-4 w-4" />
+            ) : (
+              <Download className="mr-2 h-4 w-4" />
+            )}
+            {isReimport ? 'Reimport' : 'Import'}
           </Button>
         </DialogFooter>
       </DialogContent>
