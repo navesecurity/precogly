@@ -4,6 +4,7 @@ import {
   Eye,
   Check,
   Download,
+  RefreshCw,
   ShieldCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -107,10 +108,28 @@ export function CatalogPackCard({
         </div>
         <div className="flex items-center gap-2">
           {pack.isImported ? (
-            <Badge variant="outline" className="text-green-600 border-green-600">
-              <Check className="mr-1 h-3 w-3" />
-              Imported
-            </Badge>
+            <>
+              <Badge variant="outline" className="text-green-600 border-green-600">
+                <Check className="mr-1 h-3 w-3" />
+                Imported
+              </Badge>
+              {isSecurityTeam && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onImport(pack)}
+                  disabled={isImporting}
+                  title="Reimport this pack to pull in the latest changes from source"
+                >
+                  {isImporting ? (
+                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                  ) : (
+                    <RefreshCw className="mr-2 h-3 w-3" />
+                  )}
+                  Update
+                </Button>
+              )}
+            </>
           ) : isSecurityTeam ? (
             <Button size="sm" onClick={() => onImport(pack)} disabled={isImporting}>
               {isImporting ? (
