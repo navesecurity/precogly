@@ -77,6 +77,21 @@ class DFDViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+        # NAVE PATCH: this lookup is unfiltered by organization, so without an
+        # explicit check here any authenticated user could create a DFD under
+        # any org's threat model just by knowing/guessing its id. Same check
+        # ThreatModelReferenceImageViewSet.upload_for_threat_model() already
+        # applies for the equivalent "create a resource under this threat
+        # model" case.
+        user_orgs = request.user.organization_memberships.values_list(
+            "organization_id", flat=True
+        )
+        if threat_model.organization_id not in user_orgs:
+            return Response(
+                {"error": "Not authorized"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         # Create the DFD with direct FK — first DFD is auto-primary
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
