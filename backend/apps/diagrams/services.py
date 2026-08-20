@@ -638,9 +638,16 @@ def _generate_countermeasures_for_threat(threat_instance):
             if countermeasure_status == "platform":
                 has_platform_countermeasure = True
             # Propagate library-level compliance mappings to instance level (#29)
+            # NAVE PATCH (precogly/precogly#338): exclude orphaned mappings
+            # (requirement=None, left behind by a renamed/typo'd
+            # section_code on reimport instead of being CASCADE-deleted --
+            # see apps/compliance/models.py). Without this, `ls.requirement
+            # .section_code` etc. below would raise AttributeError on the
+            # first orphaned row, and there's nothing meaningful to
+            # propagate to the instance level for one anyway.
             library_standards = CountermeasureLibraryStandard.objects.filter(
                 countermeasure_library=countermeasure_library,
-            ).select_related("requirement", "requirement__framework")
+            ).exclude(requirement__isnull=True).select_related("requirement", "requirement__framework")
             if library_standards.exists():
                 InstanceCountermeasureStandard.objects.bulk_create(
                     [
