@@ -917,6 +917,18 @@ def validate_pack(pack_path: Path) -> ValidationResult:
                         message=f"Countermeasure '{cm_id or f'[{i}]'}' has unknown cost: '{cost_value}'",
                         suggestion=f"Use one of: {', '.join(sorted(valid_costs))}",
                     ))
+                # verification_procedure / expected_result (WI-02 test-case fields): optional,
+                # free text. Accept absence silently (additive field, not required); warn only
+                # if present with a non-string value, since that would fail the TextField import.
+                for wi02_field in ("verification_procedure", "expected_result"):
+                    wi02_value = cm.get(wi02_field, "")
+                    if wi02_value and not isinstance(wi02_value, str):
+                        warnings.append(ValidationWarning(
+                            file="countermeasures.yaml",
+                            field=wi02_field,
+                            message=f"Countermeasure '{cm_id or f'[{i}]'}' has non-string {wi02_field}: {wi02_value!r}",
+                            suggestion="Use a plain text string.",
+                        ))
         except Exception:
             pass
 
@@ -2147,6 +2159,8 @@ def _load_countermeasures(library_pack: LibraryPack, file_path: Path, import_war
                 "control_type": cm.get("control_type", "preventive"),
                 "cost": cm.get("cost", "medium"),
                 "default_status": cm.get("default_status", "gap"),
+                "verification_procedure": cm.get("verification_procedure", ""),
+                "expected_result": cm.get("expected_result", ""),
                 "customization_status": "original",
             },
         )

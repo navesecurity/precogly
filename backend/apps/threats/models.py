@@ -224,6 +224,14 @@ class CountermeasureLibrary(TimestampedModel):
     name = models.CharField(max_length=255)
     description = models.TextField()
     control_type = models.CharField(max_length=50, default="preventive")
+    verification_procedure = models.TextField(
+        blank=True,
+        help_text="Imperative tester action to verify this countermeasure (WI-02 test-case field), e.g. 'Physically inspect the enclosure for tamper-evident seals; attempt to open without triggering...'",
+    )
+    expected_result = models.TextField(
+        blank=True,
+        help_text="What a Pass looks like when verification_procedure is executed",
+    )
     default_status = models.CharField(
         max_length=20,
         choices=[("gap", "Gap"), ("platform", "Platform")],
@@ -566,6 +574,14 @@ class InstanceCountermeasure(TimestampedModel):
         max_length=50,
         blank=True,
         help_text="Copied from CountermeasureLibrary.control_type on creation",
+    )
+    verification_procedure = models.TextField(
+        blank=True,
+        help_text="Copied from CountermeasureLibrary.verification_procedure on creation",
+    )
+    expected_result = models.TextField(
+        blank=True,
+        help_text="Copied from CountermeasureLibrary.expected_result on creation",
     )
     effectiveness = models.FloatField(
         null=True,

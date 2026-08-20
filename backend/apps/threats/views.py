@@ -349,6 +349,8 @@ class ComponentInstanceThreatViewSet(viewsets.ModelViewSet):
             countermeasure_name=countermeasure.name,
             countermeasure_description=countermeasure.description,
             control_type=countermeasure.control_type,
+            verification_procedure=countermeasure.verification_procedure,
+            expected_result=countermeasure.expected_result,
             status=effective_status,
         )
 
@@ -598,6 +600,8 @@ class DataFlowInstanceThreatViewSet(viewsets.ModelViewSet):
             countermeasure_name=countermeasure.name,
             countermeasure_description=countermeasure.description,
             control_type=countermeasure.control_type,
+            verification_procedure=countermeasure.verification_procedure,
+            expected_result=countermeasure.expected_result,
             status=effective_status,
         )
 
