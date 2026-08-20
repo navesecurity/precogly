@@ -28,6 +28,7 @@ from .services import (
     get_pack_preview_from_source,
     import_pack_from_path,
     sync_all_packs_from_source,
+    tag_successor_aliases_before_delete,
     validate_pack,
 )
 
@@ -419,6 +420,14 @@ class LibraryPackViewSet(viewsets.ReadOnlyModelViewSet):
 
         # Perform the deletion within a transaction
         with transaction.atomic():
+            # NAVE PATCH: record outgoing-row identity onto an identifiable
+            # successor row (same name, different pack) before the
+            # SET_NULL cascade below orphans any InstanceCountermeasure
+            # still pointing at this pack's countermeasures -- lets
+            # reconcile_orphaned_countermeasures relink them afterward.
+            # See apps.packs.services.tag_successor_aliases_before_delete.
+            tag_successor_aliases_before_delete(pack)
+
             # Delete library items (order matters for FK constraints)
             # Countermeasures reference threats via M2M, so delete them first
             CountermeasureLibrary.objects.filter(source_pack=pack).delete()
