@@ -929,6 +929,33 @@ def validate_pack(pack_path: Path) -> ValidationResult:
                             message=f"Countermeasure '{cm_id or f'[{i}]'}' has non-string {wi02_field}: {wi02_value!r}",
                             suggestion="Use a plain text string.",
                         ))
+                # aliases: optional list of previous *names* (not slugs -- see
+                # tag_successor_aliases_before_delete in services.py for why),
+                # declared by a pack author who knows this entry replaces one
+                # that had a different name, so reconcile_orphaned_
+                # countermeasures can relink instances still pointing at the
+                # old, now-gone row. Backs the ArrayField(CharField(max_length=100))
+                # on CountermeasureLibrary.aliases, hence the length check.
+                aliases_value = cm.get("aliases", [])
+                if aliases_value and not isinstance(aliases_value, list):
+                    warnings.append(ValidationWarning(
+                        file="countermeasures.yaml",
+                        field="aliases",
+                        message=f"Countermeasure '{cm_id or f'[{i}]'}' has non-list aliases: {aliases_value!r}",
+                        suggestion="Use a list of previous names, e.g. ['Old Countermeasure Name'].",
+                    ))
+                elif aliases_value:
+                    for alias_value in aliases_value:
+                        if not isinstance(alias_value, str) or len(alias_value) > 100:
+                            warnings.append(ValidationWarning(
+                                file="countermeasures.yaml",
+                                field="aliases",
+                                message=(
+                                    f"Countermeasure '{cm_id or f'[{i}]'}' has an invalid alias: "
+                                    f"{alias_value!r}"
+                                ),
+                                suggestion="Aliases must be strings of 100 characters or fewer.",
+                            ))
         except Exception:
             pass
 
@@ -1652,6 +1679,82 @@ def sync_all_packs_from_source(
 # =============================================================================
 
 
+def tag_successor_aliases_before_delete(pack: LibraryPack) -> int:
+    """Best-effort orphan-prevention hook, run immediately before a pack's
+    CountermeasureLibrary rows are hard-deleted (whole-pack unimport today;
+    force-reimport no longer deletes anything, see precogly/precogly#318).
+
+    `InstanceCountermeasure` only ever copies `CountermeasureLibrary.name`
+    (never the slug) onto itself at creation time, for self-sufficiency if
+    the library row is later removed -- so `name` is the one identity a
+    historical orphan actually retains to match against later. That means
+    `aliases` (ArrayField, model docstring says "Previous slugs for
+    backward compatibility") is populated here with previous *names*, not
+    slugs, despite the docstring: names are what `reconcile_orphaned_
+    countermeasures` can actually match an orphaned instance against. If a
+    slug-based consumer is ever added (e.g. `_resolve_countermeasure_
+    reference` falling back to `aliases`), it will need its own lookup --
+    the same array can't cleanly serve both without a namespace prefix, and
+    matching orphaned instances is the only consumer that exists today.
+
+    For every CountermeasureLibrary row in `pack` that still has live
+    InstanceCountermeasure references (`instances`), look for an unambiguous
+    "successor" row -- a CountermeasureLibrary row with the exact same
+    `name` living in a *different* pack (the shape a same-name move to
+    another pack takes in the DB once the move has been imported, e.g.
+    Nave's medtech-base -> medtech-imaging DICOM countermeasure migration).
+    When exactly one such candidate exists, record the outgoing row's name
+    onto the successor's `aliases`.
+
+    Note what this does and doesn't buy: at the moment of tagging,
+    `successor.name == old_row.name`, so exact-name matching alone would
+    already find the successor for an instance orphaned *right now* --
+    this hook's real value is durability, not extra matching power. It
+    captures the "these were the same control" fact while it's still
+    directly observable, so `reconcile_orphaned_countermeasures` can still
+    relink correctly even if it isn't run until *after* the successor row
+    has since been renamed again (a further reimport that changes an
+    item's YAML `id` creates a new row rather than renaming this one in
+    place, so the successor tagged here keeps existing, stale, findable by
+    the alias it was tagged with). A rename and a cross-pack move landing
+    in the *same* import, with no name ever shared between old and new
+    rows, has no automatic signal to detect here -- that case needs the
+    pack author to declare it explicitly via an `aliases:` list in the new
+    countermeasure's YAML entry (see `_load_countermeasures`).
+
+    No-op (skipped, not an error) when zero or multiple same-name candidates
+    exist elsewhere -- this is a best-effort hint, not a hard guarantee;
+    ambiguous or unresolvable cases fall through to `reconcile_orphaned_
+    countermeasures`'s own name-match pass, same as any other orphan.
+
+    Returns the number of successor rows tagged.
+    """
+    at_risk = CountermeasureLibrary.objects.filter(
+        source_pack=pack, instances__isnull=False
+    ).distinct()
+
+    tagged = 0
+    for old_row in at_risk:
+        candidates = list(
+            CountermeasureLibrary.objects.filter(name=old_row.name).exclude(source_pack=pack)
+        )
+        if len(candidates) != 1:
+            continue
+        successor = candidates[0]
+        if old_row.name and old_row.name not in successor.aliases:
+            successor.aliases = [*successor.aliases, old_row.name]
+            successor.save(update_fields=["aliases"])
+            tagged += 1
+
+    if tagged:
+        logger.info(
+            f"tag_successor_aliases_before_delete: tagged {tagged} successor "
+            f"CountermeasureLibrary row(s) with outgoing aliases from pack '{pack.slug}'"
+        )
+
+    return tagged
+
+
 def _hard_delete_pack_items(pack: LibraryPack):
     """Hard delete all library items from a pack.
 
@@ -1659,6 +1762,11 @@ def _hard_delete_pack_items(pack: LibraryPack):
     will orphan instances but not delete them. This preserves user work.
     """
     from apps.compliance.models import StandardFramework, StandardRequirementMapping
+
+    # NAVE PATCH: record outgoing-row identity onto an identifiable successor
+    # before the SET_NULL cascade fires, so orphaned instances can be
+    # reconciled after the fact. See tag_successor_aliases_before_delete().
+    tag_successor_aliases_before_delete(pack)
 
     ComponentLibrary.objects.filter(source_pack=pack).delete()
     ThreatLibrary.objects.filter(source_pack=pack).delete()
@@ -2149,7 +2257,7 @@ def _load_countermeasures(library_pack: LibraryPack, file_path: Path, import_war
 
         qualified_slug = f"{library_pack.slug}/{cm_id}"
 
-        CountermeasureLibrary.objects.update_or_create(
+        obj, _created = CountermeasureLibrary.objects.update_or_create(
             qualified_slug=qualified_slug,
             defaults={
                 "source_pack": library_pack,
@@ -2164,6 +2272,24 @@ def _load_countermeasures(library_pack: LibraryPack, file_path: Path, import_war
                 "customization_status": "original",
             },
         )
+
+        # NAVE PATCH: optional `aliases` list on a countermeasure entry lets
+        # a pack author explicitly declare "this replaces a countermeasure
+        # that used to be called X" -- the one case tag_successor_aliases_
+        # before_delete (see below) can't detect on its own, because a
+        # rename and a cross-pack move landing in the same import leaves no
+        # shared name to auto-link old and new rows by. Merged, never
+        # overwritten: `defaults` above would otherwise wipe out anything
+        # already recorded here (by a prior YAML declaration, or by
+        # tag_successor_aliases_before_delete at deletion time) on every
+        # reimport.
+        yaml_aliases = [a for a in (cm.get("aliases") or []) if a]
+        if yaml_aliases:
+            merged = list(dict.fromkeys([*obj.aliases, *yaml_aliases]))
+            if merged != obj.aliases:
+                obj.aliases = merged
+                obj.save(update_fields=["aliases"])
+
         count += 1
 
     return count
