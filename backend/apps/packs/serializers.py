@@ -94,7 +94,31 @@ class LibraryPackDetailSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at", "updated_at"]
 
     def get_content_summary(self, obj):
-        """Return count of items in the pack from database records."""
+        """Return count of items in the pack from database records.
+
+        NAVE NOTE (investigated 2026-08-20, not a bug): this is a live count
+        of every DB row currently attributed to `source_pack=obj`, which can
+        legitimately be *higher* than the `*_created` counts an
+        `import_single`/`ImportResult` response reports for the same pack.
+        `ImportResult.countermeasures_created` (etc., see `_import_pack()`
+        in `apps/packs/services.py`) counts entries processed from the
+        pack's *current* on-disk YAML file during that one import; this
+        counts every row the DB currently has for the pack, including
+        stale rows from an *older* version of the pack's YAML that were
+        later removed (e.g. a countermeasure moved out to a different
+        pack). Those stale rows are a deliberate trade-off of
+        precogly/precogly#318's local patch (`_hard_delete_pack_items()`
+        disabled on reimport): removed pack items linger instead of being
+        deleted, since deleting them would risk re-triggering the same
+        CASCADE-orphaning bug #318 fixed. Confirmed live 2026-08-20 on
+        medtech-base: countermeasures.yaml has 64 entries (matching
+        `countermeasures_created: 64`), but this returns 66 -- the 2 extra
+        are "DICOM Destination Verification" and "DICOM and Clinical
+        Protocol Input Validation", migrated out to medtech-imaging on
+        2026-08-19 and never pruned from medtech-base's DB rows. Both
+        numbers are correct; they just answer different questions ("what
+        did this import just process" vs. "what does the DB have now").
+        """
         return {
             "components": ComponentLibrary.objects.filter(source_pack=obj).count(),
             "threats": ThreatLibrary.objects.filter(source_pack=obj).count(),

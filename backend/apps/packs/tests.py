@@ -6,15 +6,17 @@ from pathlib import Path
 from unittest import mock
 
 import yaml
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, TestCase
 
 from apps.packs.services import (
     ImportResult,
     _find_pack_dir,
     _is_valid_slug,
     discover_packs_from_source,
+    import_pack_from_path,
     validate_pack,
 )
+from apps.threats.models import ThreatLibrary, ThreatLibraryTaxonomyEntry
 
 
 def _empty_pack_queryset():
@@ -798,3 +800,120 @@ class ImportResultWarningsTests(SimpleTestCase):
         )
         self.assertEqual(result.warnings, [])
         self.assertEqual(result.to_dict()["warnings"], [])
+
+
+# =========================================================================
+# import_single's taxonomy-join transaction-ordering bug (found 2026-08-20)
+# =========================================================================
+
+
+class ImportSinglePackTaxonomyJoinReconciliationTests(TestCase):
+    """`POST /api/packs/import_single/` (which calls `import_pack_from_path`
+    directly, exactly as exercised here) used to report `success: true` with
+    a threat-taxonomy join silently missing, with no automatic way to
+    self-heal short of a full `sync_from_source(force=True)` bulk resync.
+
+    Root cause: `_load_threat_taxonomy_joins()` resolves a join with a live
+    DB lookup at the moment its own pack is imported. If the specific
+    taxonomy entry it references doesn't exist yet, it's recorded as a
+    `PendingTaxonomyOverlay` and the join is dropped with a warning (not an
+    error), so the pack's own import still reports success. The self-heal
+    path for this, `_load_taxonomy()` calling `activate_pending_taxonomy_
+    overlays()`, only fires when the taxonomy is *newly created*
+    (`is_new_taxonomy`) -- reimporting an *already-imported* taxonomy pack
+    to add new codes (the normal way codes get added) does not re-trigger
+    it, because `ExternalTaxonomy.objects.update_or_create()` finds the
+    existing row. `sync_all_packs_from_source()` already had a "third pass"
+    workaround for this (re-running `_load_threat_taxonomy_joins()` for
+    every pack after the whole batch commits); `import_pack_from_path()`
+    (and therefore `import_single`) never did, until this fix.
+
+    This test reproduces the exact failure sequence confirmed live on the
+    Precogly server: a content pack's join references a taxonomy code that
+    doesn't exist yet at import time (silently dropped, matching the
+    documented, correct pending-overlay behavior for a genuinely-missing
+    taxonomy pack) and the taxonomy pack is *later* reimported
+    (`force=True`) to add the missing code. Before the fix in this commit,
+    the join would stay missing forever; after it, `import_pack_from_path`'s
+    post-commit reconciliation pass picks it up.
+    """
+
+    def test_reimporting_taxonomy_pack_retroactively_resolves_earlier_pending_join(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+
+            taxonomy_dir = _write_pack(
+                base, "recon-cwe-taxonomy", slug="recon-cwe-taxonomy",
+                pack_type="taxonomy", schema_version=1,
+            )
+            (taxonomy_dir / "taxonomy.yaml").write_text(yaml.safe_dump({
+                "taxonomies": [{
+                    "slug": "recon-cwe",
+                    "name": "Recon CWE",
+                    "entries": [
+                        {"external_id": "CWE-100", "title": "Placeholder Weakness"},
+                    ],
+                }],
+            }))
+
+            threat_dir = _write_pack(
+                base, "recon-threat-pack", slug="recon-threat-pack",
+                pack_type="threat", schema_version=1,
+            )
+            (threat_dir / "threats.yaml").write_text(yaml.safe_dump({
+                "threats": [
+                    {"id": "t1", "name": "Test Threat One", "description": "..."},
+                ],
+            }))
+            joins_dir = threat_dir / "joins"
+            joins_dir.mkdir()
+            (joins_dir / "threats-recon-cwe.yaml").write_text(yaml.safe_dump({
+                "taxonomy": "recon-cwe",
+                "mappings": [
+                    {"threat": "t1", "entries": ["CWE-200"]},
+                ],
+            }))
+
+            with mock.patch("apps.packs.services.get_libraries_path", return_value=base):
+                # Step 1: import the taxonomy pack, CWE-200 doesn't exist yet.
+                tax_result = import_pack_from_path(taxonomy_dir)
+                self.assertTrue(tax_result.success, getattr(tax_result, "errors", tax_result))
+
+                # Step 2: import the threat pack. Its join references
+                # CWE-200, which isn't in the taxonomy yet -- dropped with a
+                # warning, exactly like a real "import the dependency first"
+                # gap. This step alone is expected NOT to create the join;
+                # the bug is about what happens (or doesn't) after step 3.
+                threat_result = import_pack_from_path(threat_dir)
+                self.assertTrue(threat_result.success, getattr(threat_result, "errors", threat_result))
+
+                self.assertEqual(
+                    ThreatLibraryTaxonomyEntry.objects.filter(
+                        threat_library__qualified_slug="recon-threat-pack/t1"
+                    ).count(),
+                    0,
+                )
+
+                # Step 3: reimport the taxonomy pack (force=True, the normal
+                # way new codes get added to an already-imported taxonomy
+                # pack) with CWE-200 now included.
+                (taxonomy_dir / "taxonomy.yaml").write_text(yaml.safe_dump({
+                    "taxonomies": [{
+                        "slug": "recon-cwe",
+                        "name": "Recon CWE",
+                        "entries": [
+                            {"external_id": "CWE-100", "title": "Placeholder Weakness"},
+                            {"external_id": "CWE-200", "title": "Another Weakness"},
+                        ],
+                    }],
+                }))
+                reimport_result = import_pack_from_path(taxonomy_dir, force=True)
+                self.assertTrue(reimport_result.success, getattr(reimport_result, "errors", reimport_result))
+
+            # This is the assertion that would have failed before the fix:
+            # the join stayed a dangling PendingTaxonomyOverlay forever,
+            # with nothing in the single-pack import path to re-check it.
+            t1 = ThreatLibrary.objects.get(qualified_slug="recon-threat-pack/t1")
+            entries = ThreatLibraryTaxonomyEntry.objects.filter(threat_library=t1)
+            self.assertEqual(entries.count(), 1)
+            self.assertEqual(entries.first().taxonomy_entry.external_id, "CWE-200")

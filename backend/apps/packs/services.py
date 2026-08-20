@@ -1565,19 +1565,57 @@ def _import_pack(
             # Phase 5: Load frameworks and requirements (for compliance packs)
             frameworks_count = _load_frameworks(library_pack, pack_data, import_warnings)
 
-            return ImportResult(
-                success=True,
-                pack_slug=slug,
-                pack_name=name,
-                version=version,
-                message=f"Successfully imported {name} v{version} (v2 format)",
-                components_created=components_count,
-                threats_created=threats_count,
-                countermeasures_created=countermeasures_count,
-                templates_created=templates_count,
-                taxonomies_created=taxonomies_count,
-                warnings=import_warnings,
+        # NAVE PATCH (precogly/precogly, taxonomy-join transaction-ordering
+        # bug found 2026-08-20): reconcile threat-taxonomy joins across the
+        # WHOLE catalog now that this pack's own import has committed.
+        #
+        # `import_single` (the only caller of `import_pack_from_path()`
+        # outside `sync_all_packs_from_source()`'s own per-pack loop) never
+        # got the "third pass" fix `sync_all_packs_from_source()` already
+        # has for this exact bug -- full mechanism explained in
+        # `reconcile_taxonomy_joins_from_source()`'s docstring. Deliberately
+        # placed AFTER the `with transaction.atomic():` block above, not
+        # run a second time inside it: the whole point is a fresh,
+        # post-commit read of every OTHER pack's current taxonomy data --
+        # including data committed by a completely separate import (e.g. a
+        # taxonomy pack reimported to add new codes after this pack's own
+        # join already failed to resolve them) -- not a second attempt
+        # against the same transactional snapshot that produced the gap in
+        # the first place.
+        #
+        # Runs unconditionally (unlike sync_all_packs_from_source()'s own
+        # `if force:` gate, which is a perf optimization for fresh bulk
+        # syncs where the ordinary is_new_taxonomy activation path already
+        # suffices -- not a correctness requirement). A single pack import
+        # rescanning the on-disk catalog is cheap, and get_or_create/
+        # update_or_create make repeat calls safe, so there's no real cost
+        # to just always closing the gap here.
+        #
+        # A failure in this best-effort reconciliation must not
+        # retroactively turn this pack's own, already-committed, successful
+        # import into a reported failure -- caught and logged, not raised.
+        try:
+            reconcile_taxonomy_joins_from_source()
+        except Exception:
+            logger.exception(
+                f"Post-commit taxonomy join reconciliation failed after importing "
+                f"pack '{slug}'; the pack itself imported successfully, only this "
+                f"best-effort catalog-wide retry failed."
             )
+
+        return ImportResult(
+            success=True,
+            pack_slug=slug,
+            pack_name=name,
+            version=version,
+            message=f"Successfully imported {name} v{version} (v2 format)",
+            components_created=components_count,
+            threats_created=threats_count,
+            countermeasures_created=countermeasures_count,
+            templates_created=templates_count,
+            taxonomies_created=taxonomies_count,
+            warnings=import_warnings,
+        )
 
     except Exception as e:
         logger.exception(f"Failed to import v2 pack {slug}")
@@ -1658,18 +1696,11 @@ def sync_all_packs_from_source(
         # Same ordering issue as requirement overlays — taxonomy packs may
         # be re-imported after the threat packs that reference them, causing
         # CASCADE deletes to destroy the mappings. Re-loading from disk
-        # after all taxonomies exist fixes this.
-        for pack_info in packs:
-            pack = LibraryPack.objects.filter(slug=pack_info.slug).first()
-            if not pack:
-                continue
-            joins_dir = Path(pack_info.path) / "joins"
-            if not joins_dir.exists():
-                continue
-            for join_file in joins_dir.glob("threats-*.yaml"):
-                if join_file.name == "threats-countermeasures.yaml":
-                    continue
-                _load_threat_taxonomy_joins(pack, join_file)
+        # after all taxonomies exist fixes this. Extracted to
+        # `reconcile_taxonomy_joins_from_source()` (see its docstring) so
+        # `_import_pack()` can run the exact same fix for a single-pack
+        # `import_single` call, not just this bulk path.
+        reconcile_taxonomy_joins_from_source(packs)
 
     return results
 
@@ -1940,6 +1971,76 @@ def _load_threat_taxonomy_joins(library_pack: LibraryPack, file_path: Path, impo
                 import_warnings.append(msg)
 
     return count
+
+
+def reconcile_taxonomy_joins_from_source(packs: Optional[list["PackInfo"]] = None) -> int:
+    """Re-run threat-taxonomy join loading for every pack on disk.
+
+    Shared by `sync_all_packs_from_source()` (its "third pass") and
+    `_import_pack()` (used by both `import_single` and
+    `sync_all_packs_from_source()`'s own per-pack loop) -- one function so
+    the two callers can't drift apart.
+
+    Why this has to be a separate pass over *every* pack, rather than
+    something `_load_threat_taxonomy_joins()` just gets right the first
+    time inside a single pack's own transaction: that function resolves a
+    threat-taxonomy join with a live DB lookup of the referenced
+    `TaxonomyEntry` row, at the moment its own pack is being imported. That
+    lookup can fail for reasons entirely outside the pack currently being
+    imported -- most commonly, the taxonomy pack that owns the referenced
+    code (`medtech-cwe`, `medtech-capec`, `medtech-attack`, ...) hasn't
+    been imported yet, or is reimported *after* this pack to add the
+    specific code being referenced. When that happens the join is silently
+    dropped: `_load_threat_taxonomy_joins()` records the attempt as a
+    `PendingTaxonomyOverlay` and appends a *warning* (not an error), so the
+    pack's own import still reports `success: true` with the join missing.
+
+    `_load_taxonomy()` already has a self-healing path for the simplest
+    case -- `activate_pending_taxonomy_overlays()` fires automatically
+    whenever a taxonomy is imported for the first time (`is_new_taxonomy`).
+    But it's gated on the taxonomy being *newly created*, not merely
+    updated: reimporting an *already-imported* taxonomy pack to add new
+    codes (`force: true`, the normal way new CWE/CAPEC/ATT&CK codes get
+    added) does NOT re-trigger activation, because
+    `ExternalTaxonomy.objects.update_or_create()` finds the existing row
+    and `is_new_taxonomy` is False. Any pack whose join was left pending
+    *before* that reimport stays pending forever unless something
+    re-checks it -- which is what this function does, by re-reading every
+    pack's own `joins/threats-*.yaml` files off disk and re-attempting
+    `_load_threat_taxonomy_joins()` now that the whole catalog (not just
+    the one pack that triggered this call) is in whatever state it's
+    currently in. Every write inside `_load_threat_taxonomy_joins()` is
+    `get_or_create`/`update_or_create`, so calling it again for a join
+    that already resolved correctly the first time is a safe no-op.
+
+    Args:
+        packs: Pre-computed pack list, to avoid a redundant disk scan when
+            the caller already has one (e.g. `import_single`'s view, or
+            `sync_all_packs_from_source()`'s own loop). Runs its own
+            `discover_packs_from_source()` if omitted.
+
+    Returns:
+        Total number of threat-taxonomy join matches resolved across every
+        pack (includes joins that already existed and were simply
+        re-confirmed by the `get_or_create` call -- not a "net new" count).
+    """
+    if packs is None:
+        packs = discover_packs_from_source()
+
+    total = 0
+    for pack_info in packs:
+        pack = LibraryPack.objects.filter(slug=pack_info.slug).first()
+        if not pack:
+            continue
+        joins_dir = Path(pack_info.path) / "joins"
+        if not joins_dir.exists():
+            continue
+        for join_file in joins_dir.glob("threats-*.yaml"):
+            if join_file.name == "threats-countermeasures.yaml":
+                continue
+            total += _load_threat_taxonomy_joins(pack, join_file)
+
+    return total
 
 
 def _load_taxonomy(library_pack: LibraryPack, file_path: Path, import_warnings: list[str] | None = None) -> int:
@@ -2233,7 +2334,24 @@ def _load_threats(library_pack: LibraryPack, file_path: Path, import_warnings: l
 
 
 def _load_countermeasures(library_pack: LibraryPack, file_path: Path, import_warnings: list[str] | None = None) -> int:
-    """Load countermeasures from countermeasures.yaml (v2 format)."""
+    """Load countermeasures from countermeasures.yaml (v2 format).
+
+    NAVE NOTE (investigated 2026-08-20, not a bug): the returned count --
+    surfaced as `ImportResult.countermeasures_created` in `import_single`'s
+    response -- is every entry *processed from this pack's current
+    countermeasures.yaml* this call (`update_or_create`, so it really means
+    "created or updated," not "newly created" despite the field name), not
+    a live count of every `CountermeasureLibrary` row the DB has for this
+    pack. Those two numbers can legitimately differ: `LibraryPackDetail
+    Serializer.get_content_summary()` (`apps/packs/serializers.py`) reports
+    the latter, and will be higher whenever an older version of this pack
+    defined more items than the current YAML does -- precogly/precogly#318's
+    local patch deliberately leaves items removed between versions as
+    stale-but-undeleted rows rather than risk re-triggering the CASCADE
+    bug it fixed by deleting them. See that serializer method's own
+    docstring for the concrete medtech-base example (64 vs. 66) this was
+    verified against live.
+    """
     if import_warnings is None:
         import_warnings = []
     if not file_path.exists():
@@ -3071,10 +3189,17 @@ def get_active_overlays_for_pack(pack: LibraryPack) -> list[ActiveOverlayInfo]:
     """
     from apps.compliance.models import CountermeasureLibraryStandard, StandardFramework
 
-    # Get all mappings for this pack's countermeasures
+    # Get all mappings for this pack's countermeasures.
+    # NAVE PATCH (precogly/precogly#338): `requirement` can now be None (an
+    # orphaned mapping left behind by a renamed/typo'd section_code on a
+    # compliance-pack reimport, SET_NULL'd instead of CASCADE-deleted --
+    # see apps/compliance/models.py). Excluded here rather than null-
+    # guarded in the loop below: an orphaned mapping isn't mapped to any
+    # framework requirement any more, so it shouldn't count as an "active"
+    # overlay for this pack.
     mappings = CountermeasureLibraryStandard.objects.filter(
         countermeasure_library__source_pack=pack
-    ).select_related("requirement__framework")
+    ).exclude(requirement__isnull=True).select_related("requirement__framework")
 
     # Group by framework
     framework_counts: dict[int, dict] = {}
