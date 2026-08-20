@@ -18,7 +18,7 @@ export interface ComplianceStandardMapping {
 /**
  * Status of a countermeasure for a specific component-threat
  */
-export type CountermeasureStatus = 'platform' | 'gap' | 'planned' | 'verified' | 'waived'
+export type CountermeasureStatus = 'platform' | 'gap' | 'planned' | 'in_progress' | 'implemented' | 'verified' | 'waived' | 'decommissioned'
 
 export const COUNTERMEASURE_STATUS_CONFIG: Record<
   CountermeasureStatus,
@@ -53,6 +53,24 @@ export const COUNTERMEASURE_STATUS_CONFIG: Record<
     color: '#3b82f6', // blue
     bgColor: 'bg-blue-500',
     description: 'Risk accepted, not implementing',
+  },
+  in_progress: {
+    label: 'In Progress',
+    color: '#eab308', // yellow
+    bgColor: 'bg-yellow-500',
+    description: 'Implementation actively underway',
+  },
+  implemented: {
+    label: 'Implemented',
+    color: '#10b981', // teal-green, distinct from verified
+    bgColor: 'bg-emerald-500',
+    description: 'Implemented, not yet independently verified by the security team',
+  },
+  decommissioned: {
+    label: 'Decommissioned',
+    color: '#6b7280', // gray
+    bgColor: 'bg-gray-400',
+    description: 'Control formally retired, no longer tracked as active',
   },
 }
 
@@ -220,9 +238,11 @@ export function deriveThreatStatus(countermeasures: ComponentThreatCountermeasur
 
   const hasPlanned = countermeasures.some((cm) => cm.status === 'planned')
   const hasWaived = countermeasures.some((cm) => cm.status === 'waived')
-  if (hasPlanned || hasWaived) return 'addressable'
+  const hasInProgress = countermeasures.some((cm) => cm.status === 'in_progress')
+  if (hasPlanned || hasWaived || hasInProgress) return 'addressable'
 
-  // All are 'platform' or 'verified' (no gaps, no planned, no waived)
+  // All are 'platform', 'verified', 'implemented', or 'decommissioned'
+  // (no gaps, no planned, no waived, no in_progress)
   return 'mitigated'
 }
 

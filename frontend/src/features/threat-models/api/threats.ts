@@ -8,8 +8,10 @@ import type { ComponentThreat, ComponentThreatCountermeasure, CountermeasureStat
 import type { TaxonomyEntry } from '@/types/domain'
 import { componentKeys } from './components'
 
-// Backend countermeasure status (aligned with frontend CountermeasureStatus)
-type BackendCountermeasureStatus = 'platform' | 'gap' | 'planned' | 'verified' | 'waived'
+// Backend countermeasure status. Aliased directly to the frontend CountermeasureStatus
+// type (rather than duplicated as a literal union) so the two can no longer drift --
+// this duplication is what caused precogly/precogly#328.
+type BackendCountermeasureStatus = CountermeasureStatus
 
 // Types
 export interface ComponentInstanceThreat {
