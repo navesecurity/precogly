@@ -1,4 +1,6 @@
 venv/
+# uv's default location. A host venv holds host-platform wheels.
+.venv/
 __pycache__/
 *.pyc
 *.pyo

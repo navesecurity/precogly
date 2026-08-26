@@ -13,7 +13,7 @@ import {
   addEdge,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { ArrowLeft, Save, Clock, Loader2, Pencil, Trash2, ShieldAlert } from 'lucide-react'
+import { ArrowLeft, Save, Clock, Loader2, Pencil, Trash2, ShieldAlert, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DeleteDFDDialog } from '@/features/threat-models/components'
 import {
@@ -579,6 +579,16 @@ function DFDEditorContent() {
           </Button>
         </div>
       </div>
+
+      {/* Reference diagram banner */}
+      {diagram && !diagram.isPrimary && (
+        <div className="flex items-center gap-2 px-4 py-1.5 bg-amber-50 border-b border-amber-200 text-amber-800 text-sm">
+          <Info className="h-4 w-4 shrink-0" />
+          <span>
+            This is a reference diagram. Components here are not synced to threat analysis.
+          </span>
+        </div>
+      )}
 
       {/* Toolbar */}
       <DiagramToolbar

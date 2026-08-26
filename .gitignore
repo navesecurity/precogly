@@ -10,8 +10,10 @@ __pycache__/
 *.pyo
 *.egg-info/
 backend/venv/
+backend/.venv/
 .mypy_cache/
 .pytest_cache/
+.ruff_cache/
 htmlcov/
 .coverage
 
@@ -33,6 +35,7 @@ site/
 # Local working files (session notes, scratch artifacts)
 SESSION.md
 tmp/
+docs/design/
 
 # Proposed icon (pending approval)
 frontend/src/features/ai/components/OwlMark_proposed.tsx

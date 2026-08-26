@@ -2,11 +2,13 @@
 Development settings for Precogly backend.
 """
 
-from .base import *  # noqa: F401, F403
+from .base import *  # noqa: F403
 
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0", "backend"]
+# "0.0.0.0" is here so the container's runserver is reachable from the host;
+# this settings module is never loaded in production, which uses production.py.
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0", "backend"]  # noqa: S104
 
 # Development-only apps
 INSTALLED_APPS += [  # noqa: F405

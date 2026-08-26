@@ -286,6 +286,20 @@ AI_API_KEY = env("AI_API_KEY", default="")
 # actionable error rather than hanging the user's request indefinitely.
 AI_REQUEST_TIMEOUT = env.int("AI_REQUEST_TIMEOUT", default=60)
 
+# Which addresses a model endpoint may resolve to, whether it came from
+# AI_BASE_URL above or from an organization's own saved config. Organizations set
+# their own base_url through the UI and Precogly fetches it server-side, which is
+# what this guards; see apps.ai.url_policy.
+#
+#   allow-loopback   127.0.0.0/8 and ::1 as well as public addresses
+#   deny-private     public addresses only
+#
+# Permissive here because running a model beside Precogly is what a local install
+# is for — docker-compose.yml carries a socat sidecar so that http://localhost:1234
+# reaches the host. production.py tightens it, which is where the deployment has
+# already said it is exposed.
+AI_PROVIDER_URL_POLICY = env.str("AI_PROVIDER_URL_POLICY", default="allow-loopback")
+
 # The AI_* values above act as the *fallback* provider: a single operator-wide
 # config used when an organization has not saved its own AIProviderConfig. Orgs
 # that bring their own model override it per-tenant in the database.
