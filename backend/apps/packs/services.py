@@ -2209,7 +2209,7 @@ def _load_threat_taxonomy_joins(
     return count
 
 
-def reconcile_taxonomy_joins_from_source(packs: Optional[list["PackInfo"]] = None) -> int:
+def reconcile_taxonomy_joins_from_source(packs: list["PackInfo"] | None = None) -> int:
     """Re-run threat-taxonomy join loading for every pack on disk.
 
     Shared by `sync_all_packs_from_source()` (its "third pass") and
