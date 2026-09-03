@@ -1,0 +1,69 @@
+framework: soc2-2017
+
+mappings:
+  # CC6.1 - Logical access controls
+  - countermeasure: s3-bucket-policy
+    requirements:
+      - "CC6.1"
+    sufficiency: full
+
+  - countermeasure: s3-block-public-access
+    requirements:
+      - "CC6.1"
+    sufficiency: full
+
+  - countermeasure: lambda-least-privilege
+    requirements:
+      - "CC6.1"
+    sufficiency: full
+
+  - countermeasure: lambda-vpc
+    requirements:
+      - "CC6.1"
+    sufficiency: partial
+
+  # CC6.2 - User registration and authorization
+  - countermeasure: lambda-least-privilege
+    requirements:
+      - "CC6.2"
+    sufficiency: partial
+
+  # CC7.2 - System monitoring
+  - countermeasure: s3-versioning
+    requirements:
+      - "CC7.2"
+    sufficiency: partial
+
+  # AI / ML Countermeasures
+  # CC6.1 - Logical access controls
+  - countermeasure: rag-access-control
+    requirements:
+      - "CC6.1"
+    sufficiency: full
+
+  - countermeasure: opensearch-access-policy
+    requirements:
+      - "CC6.1"
+    sufficiency: full
+
+  # CC6.2 - User registration and authorization
+  - countermeasure: cognito-mfa
+    requirements:
+      - "CC6.2"
+    sufficiency: partial
+
+  - countermeasure: cognito-advanced-security
+    requirements:
+      - "CC6.2"
+    sufficiency: partial
+
+  # CC7.2 - System monitoring
+  - countermeasure: bedrock-model-invocation-logging
+    requirements:
+      - "CC7.2"
+    sufficiency: partial
+
+  - countermeasure: cloudwatch-alarm
+    requirements:
+      - "CC7.2"
+    sufficiency: partial
