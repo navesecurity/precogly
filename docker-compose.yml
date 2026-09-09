@@ -1,5 +1,6 @@
 services:
   db:
+    restart: unless-stopped
     image: postgres:16-alpine
     container_name: precogly-postgres
     environment:
@@ -17,6 +18,7 @@ services:
       retries: 5
 
   backend:
+    restart: unless-stopped
     build:
       context: ./backend
       target: dev
@@ -24,6 +26,7 @@ services:
     volumes:
       - ./backend:/app
       - ./libraries:/libraries
+      - ./libraries/_custom-packs:/libraries/packs/nave-custom
     ports:
       - "8000:8000"
     env_file:
@@ -44,6 +47,7 @@ services:
   # provider base URLs portable (http://localhost:1234/v1) instead of
   # baking in the Docker-only host.docker.internal hostname.
   lmstudio-proxy:
+    restart: unless-stopped
     image: alpine/socat
     container_name: precogly-lmstudio-proxy
     network_mode: "service:backend"
@@ -52,6 +56,7 @@ services:
       - backend
 
   frontend:
+    restart: unless-stopped
     build:
       context: ./frontend
       target: dev
