@@ -1930,8 +1930,10 @@ class TmLibraryAdapter(BaseAdapter):
             cm_sym = cm_fm.get("symbolic_name") or f"control_{cm.pk}"
             compliance_data.setdefault(cm_sym, []).append(
                 {
+                    # NAVE FIX: requirement is nullable since the #338 SET_NULL change;
+                    # guard it before dereferencing .framework.
                     "framework": standard.requirement.framework.name
-                    if standard.requirement.framework
+                    if standard.requirement and standard.requirement.framework
                     else "",
                     "requirement_id": standard.requirement.section_code
                     if standard.requirement
