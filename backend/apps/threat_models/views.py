@@ -613,6 +613,18 @@ class ThreatModelViewSet(viewsets.ModelViewSet):
                         else None
                     )
                     or cm.control_nature,
+                    "verification_procedure": (
+                        cm.countermeasure_library.verification_procedure
+                        if cm.countermeasure_library
+                        else None
+                    )
+                    or cm.verification_procedure,
+                    "expected_result": (
+                        cm.countermeasure_library.expected_result
+                        if cm.countermeasure_library
+                        else None
+                    )
+                    or cm.expected_result,
                     "status": cm.status,
                     "priority": cm.priority,
                     "due_date": cm.due_date,
@@ -689,6 +701,18 @@ class ThreatModelViewSet(viewsets.ModelViewSet):
                     )
                     or cm.countermeasure_name,
                     "countermeasure_library_id": cm.countermeasure_library_id,
+                    "verification_procedure": (
+                        cm.countermeasure_library.verification_procedure
+                        if cm.countermeasure_library
+                        else None
+                    )
+                    or cm.verification_procedure,
+                    "expected_result": (
+                        cm.countermeasure_library.expected_result
+                        if cm.countermeasure_library
+                        else None
+                    )
+                    or cm.expected_result,
                     "status": cm.status,
                     "assigned_owner_email": cm.assigned_owner.email
                     if cm.assigned_owner
