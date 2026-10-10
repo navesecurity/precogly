@@ -154,7 +154,8 @@ class Command(BaseCommand):
             diverged = (
                 instance.countermeasure_name != lib.name
                 or instance.countermeasure_description != lib.description
-                or instance.control_type != lib.control_type
+                or instance.control_functions != lib.control_functions
+                or instance.control_nature != lib.control_nature
             )
             note = "  [content diverged from current library row]" if diverged else ""
             self.stdout.write(
