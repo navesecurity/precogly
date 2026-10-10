@@ -71,7 +71,7 @@ class TagSuccessorAliasesTests(ReconciliationTestBase):
             qualified_slug="recon-test-old-pack/encrypt-data",
             name="Encrypt Sensitive Data",
             description="old description",
-            control_type="preventive",
+            control_functions=["preventive"],
         )
         successor = CountermeasureLibrary.objects.create(
             source_pack=self.new_pack,
@@ -79,14 +79,14 @@ class TagSuccessorAliasesTests(ReconciliationTestBase):
             qualified_slug="recon-test-new-pack/encrypt-data",
             name="Encrypt Sensitive Data",
             description="new description",
-            control_type="preventive",
+            control_functions=["preventive"],
         )
         InstanceCountermeasure.objects.create(
             threat_model=self.threat_model,
             countermeasure_library=old_row,
             countermeasure_name=old_row.name,
             countermeasure_description=old_row.description,
-            control_type=old_row.control_type,
+            control_functions=old_row.control_functions,
         )
 
         tagged = tag_successor_aliases_before_delete(self.old_pack)
@@ -104,7 +104,7 @@ class TagSuccessorAliasesTests(ReconciliationTestBase):
             qualified_slug="recon-test-old-pack/unused-control",
             name="Unused Control",
             description="",
-            control_type="preventive",
+            control_functions=["preventive"],
         )
         successor = CountermeasureLibrary.objects.create(
             source_pack=self.new_pack,
@@ -112,7 +112,7 @@ class TagSuccessorAliasesTests(ReconciliationTestBase):
             qualified_slug="recon-test-new-pack/unused-control",
             name="Unused Control",
             description="",
-            control_type="preventive",
+            control_functions=["preventive"],
         )
         # no InstanceCountermeasure created -- nothing at risk
 
@@ -130,7 +130,7 @@ class TagSuccessorAliasesTests(ReconciliationTestBase):
             qualified_slug="recon-test-old-pack/ambiguous-control",
             name="Ambiguous Control",
             description="",
-            control_type="preventive",
+            control_functions=["preventive"],
         )
         third_pack = LibraryPack.objects.create(
             slug="recon-test-third-pack",
@@ -146,7 +146,7 @@ class TagSuccessorAliasesTests(ReconciliationTestBase):
             qualified_slug="recon-test-new-pack/ambiguous-control",
             name="Ambiguous Control",
             description="",
-            control_type="preventive",
+            control_functions=["preventive"],
         )
         successor_b = CountermeasureLibrary.objects.create(
             source_pack=third_pack,
@@ -154,7 +154,7 @@ class TagSuccessorAliasesTests(ReconciliationTestBase):
             qualified_slug="recon-test-third-pack/ambiguous-control",
             name="Ambiguous Control",
             description="",
-            control_type="preventive",
+            control_functions=["preventive"],
         )
         InstanceCountermeasure.objects.create(
             threat_model=self.threat_model,
@@ -182,7 +182,7 @@ class TagSuccessorAliasesTests(ReconciliationTestBase):
             qualified_slug="recon-test-old-pack/patch-mgmt",
             name="Patch Management",
             description="",
-            control_type="preventive",
+            control_functions=["preventive"],
         )
         successor = CountermeasureLibrary.objects.create(
             source_pack=self.new_pack,
@@ -190,7 +190,7 @@ class TagSuccessorAliasesTests(ReconciliationTestBase):
             qualified_slug="recon-test-new-pack/patch-mgmt",
             name="Patch Management",
             description="",
-            control_type="preventive",
+            control_functions=["preventive"],
         )
         instance = InstanceCountermeasure.objects.create(
             threat_model=self.threat_model,
@@ -255,7 +255,7 @@ class LoadCountermeasuresAliasesTests(ReconciliationTestBase):
             qualified_slug="recon-test-new-pack/mfa-v2",
             name="Multi-Factor Authentication (Hardware Token)",
             description="desc",
-            control_type="preventive",
+            control_functions=["preventive"],
             aliases=["Multi-Factor Authentication"],
         )
 
@@ -296,14 +296,14 @@ class ReconcileOrphanedCountermeasuresCommandTests(ReconciliationTestBase):
             qualified_slug="recon-test-new-pack/mfa",
             name="Multi-Factor Authentication",
             description="desc",
-            control_type="preventive",
+            control_functions=["preventive"],
         )
         orphan = InstanceCountermeasure.objects.create(
             threat_model=self.threat_model,
             countermeasure_library=None,
             countermeasure_name="Multi-Factor Authentication",
             countermeasure_description="desc",
-            control_type="preventive",
+            control_functions=["preventive"],
         )
 
         out = StringIO()
@@ -326,7 +326,7 @@ class ReconcileOrphanedCountermeasuresCommandTests(ReconciliationTestBase):
             qualified_slug="recon-test-new-pack/mfa-v2",
             name="Multi-Factor Authentication (Hardware Token)",
             description="desc",
-            control_type="preventive",
+            control_functions=["preventive"],
             aliases=["Multi-Factor Authentication"],
         )
         orphan = InstanceCountermeasure.objects.create(
@@ -334,7 +334,7 @@ class ReconcileOrphanedCountermeasuresCommandTests(ReconciliationTestBase):
             countermeasure_library=None,
             countermeasure_name="Multi-Factor Authentication",
             countermeasure_description="desc",
-            control_type="preventive",
+            control_functions=["preventive"],
         )
 
         out = StringIO()
@@ -353,7 +353,7 @@ class ReconcileOrphanedCountermeasuresCommandTests(ReconciliationTestBase):
             qualified_slug="recon-test-new-pack/dup-a",
             name="Duplicate Name Control",
             description="",
-            control_type="preventive",
+            control_functions=["preventive"],
         )
         CountermeasureLibrary.objects.create(
             source_pack=self.old_pack,
@@ -361,7 +361,7 @@ class ReconcileOrphanedCountermeasuresCommandTests(ReconciliationTestBase):
             qualified_slug="recon-test-old-pack/dup-b",
             name="Duplicate Name Control",
             description="",
-            control_type="preventive",
+            control_functions=["preventive"],
         )
         orphan = InstanceCountermeasure.objects.create(
             threat_model=self.threat_model,
@@ -383,7 +383,7 @@ class ReconcileOrphanedCountermeasuresCommandTests(ReconciliationTestBase):
             qualified_slug="recon-test-new-pack/dry-run-control",
             name="Dry Run Control",
             description="",
-            control_type="preventive",
+            control_functions=["preventive"],
         )
         orphan = InstanceCountermeasure.objects.create(
             threat_model=self.threat_model,
@@ -407,7 +407,7 @@ class ReconcileOrphanedCountermeasuresCommandTests(ReconciliationTestBase):
             qualified_slug="recon-test-new-pack/scoped-control",
             name="Scoped Control",
             description="",
-            control_type="preventive",
+            control_functions=["preventive"],
         )
         in_scope = InstanceCountermeasure.objects.create(
             threat_model=self.threat_model,
