@@ -10,6 +10,7 @@ from django.db import models
 from apps.core.models import TimestampedModel
 from apps.core.tenancy import Tenancy
 from apps.systems.models import ComponentLibrary, DataFlow, OrgsystemComponent
+from apps.threats.nave_dismissal import NaveDismissalMixin
 
 
 class ThreatLibrary(TimestampedModel):
@@ -341,7 +342,7 @@ class TriageStatus(models.TextChoices):
 ACTIVE_TRIAGE_STATUSES = (TriageStatus.OPEN, TriageStatus.MITIGATE)
 
 
-class ComponentInstanceThreat(TimestampedModel):
+class ComponentInstanceThreat(NaveDismissalMixin, TimestampedModel):
     """Threat instance for a specific component."""
 
     tenancy = Tenancy.TENANT_OWNED
@@ -384,6 +385,18 @@ class ComponentInstanceThreat(TimestampedModel):
     severity_scoring_metadata = models.JSONField(default=dict, blank=True)
 
     # Triage decision
+    # NAVE ADDITION: dismissal survives upstream's move to triage_status (see
+    # apps/threats/nave_dismissal.py).
+    is_dismissed = models.BooleanField(
+        default=False,
+        help_text="Dismissed threats are hidden from active view but preserved for audit",
+    )
+    dismissal_reason = models.TextField(
+        blank=True,
+        default="",
+        help_text="Reason for dismissing the threat",
+    )
+
     triage_status = models.CharField(
         max_length=20,
         choices=TriageStatus.choices,
@@ -448,7 +461,7 @@ class ComponentInstanceThreat(TimestampedModel):
         return f"{self.component} - {self.threat_library}"
 
 
-class DataFlowInstanceThreat(TimestampedModel):
+class DataFlowInstanceThreat(NaveDismissalMixin, TimestampedModel):
     """Threat instance for a specific data flow."""
 
     tenancy = Tenancy.TENANT_OWNED
@@ -491,6 +504,18 @@ class DataFlowInstanceThreat(TimestampedModel):
     severity_scoring_metadata = models.JSONField(default=dict, blank=True)
 
     # Triage decision
+    # NAVE ADDITION: dismissal survives upstream's move to triage_status (see
+    # apps/threats/nave_dismissal.py).
+    is_dismissed = models.BooleanField(
+        default=False,
+        help_text="Dismissed threats are hidden from active view but preserved for audit",
+    )
+    dismissal_reason = models.TextField(
+        blank=True,
+        default="",
+        help_text="Reason for dismissing the threat",
+    )
+
     triage_status = models.CharField(
         max_length=20,
         choices=TriageStatus.choices,

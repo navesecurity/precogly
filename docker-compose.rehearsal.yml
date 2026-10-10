@@ -1,0 +1,23 @@
+name: rehearsal
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: rehearsal-postgres
+    env_file: [.env.rehearsal]
+    volumes: [rehearsal_pg:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U precogly -d precogly"]
+      interval: 5s
+      retries: 10
+  backend:
+    build: {context: ., dockerfile: backend/Dockerfile, target: dev}
+    container_name: rehearsal-backend
+    env_file: [.env.rehearsal]
+    volumes:
+      - ./backend:/app/backend
+      - ./libraries:/app/libraries
+      - ./mcp:/app/mcp
+    command: ["sleep", "infinity"]
+    depends_on: {db: {condition: service_healthy}}
+volumes:
+  rehearsal_pg:

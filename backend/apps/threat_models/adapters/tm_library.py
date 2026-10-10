@@ -367,6 +367,15 @@ class TmLibraryAdapter(BaseAdapter):
             threat_instance.impact_description = impact_description
             update_fields.append("impact_description")
 
+        # NAVE ADDITION: restore the dismissal flag and reason.
+        if detail.get("is_dismissed"):
+            threat_instance.is_dismissed = True
+            update_fields.append("is_dismissed")
+            dismissal_reason = detail.get("dismissal_reason", "")
+            if dismissal_reason:
+                threat_instance.dismissal_reason = dismissal_reason
+                update_fields.append("dismissal_reason")
+
         # New format: triage_status / decision_rationale
         triage_status = detail.get("triage_status")
         if triage_status:
@@ -1771,6 +1780,14 @@ class TmLibraryAdapter(BaseAdapter):
                         detail_entry["severity_scoring_metadata"] = (
                             threat_instance.severity_scoring_metadata
                         )
+
+                    # NAVE ADDITION: dismissal flag and reason travel with the export.
+                    if threat_instance.is_dismissed:
+                        detail_entry["is_dismissed"] = True
+                        if threat_instance.dismissal_reason:
+                            detail_entry["dismissal_reason"] = (
+                                threat_instance.dismissal_reason
+                            )
 
                     # Per-instance triage state
                     if threat_instance.triage_status != "open":
