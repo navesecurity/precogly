@@ -2,16 +2,17 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import type { ReportData } from '@/features/reports/types/report'
 import { ReportSection } from '../ReportSection'
+import { SEVERITY_PILL } from '@/lib/severity-colors'
 
 interface ExecutiveSummaryProps {
   data: ReportData
 }
 
 const SEVERITY_COLORS: Record<string, string> = {
-  critical: 'bg-red-100 text-red-700',
-  high: 'bg-orange-100 text-orange-700',
-  medium: 'bg-yellow-100 text-yellow-700',
-  low: 'bg-green-100 text-green-700',
+  critical: SEVERITY_PILL.critical,
+  high: SEVERITY_PILL.high,
+  medium: SEVERITY_PILL.medium,
+  low: SEVERITY_PILL.low,
 }
 
 const STATUS_COLORS: Record<string, string> = {

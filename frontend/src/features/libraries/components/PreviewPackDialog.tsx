@@ -26,6 +26,7 @@ import {
   useSourcePackPreview,
   type PackPreviewResponse,
 } from '@/features/libraries/api/packs'
+import { SEVERITY_PILL } from '@/lib/severity-colors'
 
 interface PreviewPackDialogProps {
   /** Pack ID for database packs */
@@ -332,10 +333,10 @@ function PackTypeBadge({ type }: { type: string }) {
 
 function SeverityBadge({ severity }: { severity: string }) {
   const colors: Record<string, string> = {
-    critical: 'bg-red-600 text-white',
-    high: 'bg-red-100 text-red-800',
-    medium: 'bg-yellow-100 text-yellow-800',
-    low: 'bg-green-100 text-green-800',
+    critical: SEVERITY_PILL.critical,
+    high: SEVERITY_PILL.high,
+    medium: SEVERITY_PILL.medium,
+    low: SEVERITY_PILL.low,
   }
   return (
     <Badge variant="secondary" className={colors[severity] || ''}>

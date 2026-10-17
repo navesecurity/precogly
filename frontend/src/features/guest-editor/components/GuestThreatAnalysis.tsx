@@ -40,13 +40,14 @@ import { STATUS_COLORS, getThreatWarning, GUEST_THREAT_STATUS_OPTIONS } from '..
 import { STRIDE_CONFIG } from '@/types/domain'
 
 const SEVERITY_COLORS: Record<GuestThreat['severity'], string> = {
-  low: 'bg-blue-100 text-blue-800',
-  medium: 'bg-yellow-100 text-yellow-800',
-  high: 'bg-orange-100 text-orange-800',
-  critical: 'bg-red-100 text-red-800',
+  low: SEVERITY_PILL.low,
+  medium: SEVERITY_PILL.medium,
+  high: SEVERITY_PILL.high,
+  critical: SEVERITY_PILL.critical,
 }
 
 import type { ControlFunction, ControlNature } from '../types'
+import { SEVERITY_PILL } from '@/lib/severity-colors'
 
 const CONTROL_FUNCTION_COLORS: Record<ControlFunction, string> = {
   preventive: 'bg-green-100 text-green-800',

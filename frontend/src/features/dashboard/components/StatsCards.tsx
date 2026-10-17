@@ -1,6 +1,7 @@
 import { FileText, BarChart3 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { DashboardStats } from '@/types'
+import { SEVERITY_DOT } from '@/lib/severity-colors'
 
 interface StatsCardsProps {
   stats: DashboardStats
@@ -17,10 +18,10 @@ const statItems = [
 ]
 
 const riskLevelColors = {
-  critical: 'bg-red-500',
-  high: 'bg-orange-500',
-  medium: 'bg-yellow-500',
-  low: 'bg-green-500',
+  critical: SEVERITY_DOT.critical,
+  high: SEVERITY_DOT.high,
+  medium: SEVERITY_DOT.medium,
+  low: SEVERITY_DOT.low,
 }
 
 export function StatsCards({ stats, isLoading }: StatsCardsProps) {

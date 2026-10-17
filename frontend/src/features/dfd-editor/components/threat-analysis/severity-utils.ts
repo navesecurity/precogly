@@ -1,9 +1,11 @@
+import { SEVERITY_PILL } from '@/lib/severity-colors'
+
 export const PRIORITY_CONFIG: Record<string, { label: string; color: string }> = {
   none: { label: 'None', color: 'bg-gray-100 text-gray-600' },
-  low: { label: 'Low', color: 'bg-blue-100 text-blue-700' },
-  medium: { label: 'Medium', color: 'bg-yellow-100 text-yellow-700' },
-  high: { label: 'High', color: 'bg-orange-100 text-orange-700' },
-  critical: { label: 'Critical', color: 'bg-red-100 text-red-700' },
+  low: { label: 'Low', color: SEVERITY_PILL.low },
+  medium: { label: 'Medium', color: SEVERITY_PILL.medium },
+  high: { label: 'High', color: SEVERITY_PILL.high },
+  critical: { label: 'Critical', color: SEVERITY_PILL.critical },
 }
 
 export const LIKELIHOOD_OPTIONS = [
@@ -37,8 +39,8 @@ export function computeSeverity(likelihood: string, impact: string): string {
 }
 
 export const SEVERITY_COLORS: Record<string, string> = {
-  low: 'bg-green-100 text-green-700',
-  medium: 'bg-yellow-100 text-yellow-700',
-  high: 'bg-orange-100 text-orange-700',
-  critical: 'bg-red-100 text-red-700',
+  low: SEVERITY_PILL.low,
+  medium: SEVERITY_PILL.medium,
+  high: SEVERITY_PILL.high,
+  critical: SEVERITY_PILL.critical,
 }

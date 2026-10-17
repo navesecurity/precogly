@@ -83,6 +83,7 @@ import type { ComponentThreat } from '@/features/dfd-editor/types/threat-analysi
 import { isActiveThreat } from '@/types/triage'
 import { useWorkspace } from '@/contexts/WorkspaceContext'
 import { useOrganizationMembers } from '@/features/organization/api/organizations'
+import { SEVERITY_PILL } from '@/lib/severity-colors'
 
 interface RiskAnalysisTabProps {
   threatModelId: string
@@ -102,10 +103,10 @@ const KANBAN_COLUMNS: { response: RiskResponse | null; label: string; color: str
 ]
 
 const LEVEL_COLORS: Record<RiskLevel, string> = {
-  critical: 'bg-red-100 text-red-800 border-red-200',
-  high: 'bg-orange-100 text-orange-800 border-orange-200',
-  medium: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  low: 'bg-green-100 text-green-800 border-green-200',
+  critical: SEVERITY_PILL.critical,
+  high: SEVERITY_PILL.high,
+  medium: SEVERITY_PILL.medium,
+  low: SEVERITY_PILL.low,
 }
 
 const RESPONSE_COLORS: Record<string, string> = {

@@ -5,6 +5,7 @@ import { ChevronDown, ChevronRight } from 'lucide-react'
 import type { ReportRisk } from '@/features/reports/types/report'
 import type { SectionDepth } from '../reportConfig'
 import { ReportSection } from '../ReportSection'
+import { SEVERITY_PILL } from '@/lib/severity-colors'
 
 interface RiskSectionProps {
   risks: ReportRisk[]
@@ -12,10 +13,10 @@ interface RiskSectionProps {
 }
 
 const LEVEL_COLORS: Record<string, string> = {
-  critical: 'bg-red-100 text-red-700',
-  high: 'bg-orange-100 text-orange-700',
-  medium: 'bg-yellow-100 text-yellow-700',
-  low: 'bg-green-100 text-green-700',
+  critical: SEVERITY_PILL.critical,
+  high: SEVERITY_PILL.high,
+  medium: SEVERITY_PILL.medium,
+  low: SEVERITY_PILL.low,
 }
 
 function RiskRow({ risk, depth }: { risk: ReportRisk; depth: SectionDepth }) {

@@ -45,14 +45,19 @@ export function Navbar() {
     <header className="sticky top-0 z-50 w-full border-b bg-background">
       <div className={cn('flex items-center px-4', isMinimalNav ? 'h-11' : 'h-14')}>
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2.5">
           <img
             src={naveSymbol}
             alt="Nave Security"
-            className={cn('w-auto', isMinimalNav ? 'h-6' : 'h-8')}
+            className={cn('w-auto', isMinimalNav ? 'h-7' : 'h-9')}
           />
-          <span className={cn('font-display uppercase tracking-[0.14em]', isMinimalNav ? 'text-base' : 'text-xl')}>
-            Precogly
+          <span className="flex flex-col leading-none">
+            <span className={cn('font-display uppercase tracking-[0.14em]', isMinimalNav ? 'text-lg' : 'text-xl')}>
+              Precogly
+            </span>
+            <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              Nave Security
+            </span>
           </span>
         </Link>
 

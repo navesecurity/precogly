@@ -2,6 +2,7 @@ import { AlertTriangle, CheckCircle, XCircle } from 'lucide-react'
 import type { ReportData } from '@/features/reports/types/report'
 import type { SectionDepth } from '../reportConfig'
 import { ReportSection } from '../ReportSection'
+import { SEVERITY_TEXT, SEVERITY_TINT } from '@/lib/severity-colors'
 
 interface FindingsSectionProps {
   data: ReportData
@@ -95,17 +96,17 @@ export function FindingsSection({ data, depth }: FindingsSectionProps) {
     : findings
 
   const SEVERITY_ICONS = {
-    critical: <XCircle className="h-4 w-4 text-red-500 shrink-0" />,
-    high: <AlertTriangle className="h-4 w-4 text-orange-500 shrink-0" />,
-    medium: <AlertTriangle className="h-4 w-4 text-yellow-500 shrink-0" />,
-    info: <CheckCircle className="h-4 w-4 text-blue-500 shrink-0" />,
+    critical: <XCircle className={`h-4 w-4 shrink-0 ${SEVERITY_TEXT.critical}`} />,
+    high: <AlertTriangle className={`h-4 w-4 shrink-0 ${SEVERITY_TEXT.high}`} />,
+    medium: <AlertTriangle className={`h-4 w-4 shrink-0 ${SEVERITY_TEXT.medium}`} />,
+    info: <CheckCircle className={`h-4 w-4 shrink-0 ${SEVERITY_TEXT.info}`} />,
   }
 
   const SEVERITY_BG: Record<string, string> = {
-    critical: 'border-red-200 bg-red-50',
-    high: 'border-orange-200 bg-orange-50',
-    medium: 'border-yellow-200 bg-yellow-50',
-    info: 'border-blue-200 bg-blue-50',
+    critical: SEVERITY_TINT.critical,
+    high: SEVERITY_TINT.high,
+    medium: SEVERITY_TINT.medium,
+    info: SEVERITY_TINT.info,
   }
 
   return (

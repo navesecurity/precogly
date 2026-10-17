@@ -9,12 +9,13 @@ import { GuestThreatDialog } from './GuestAddThreatDialog'
 import type { GuestThreat } from '../types'
 import { STATUS_COLORS, getThreatWarning } from '../types'
 import { STRIDE_CONFIG } from '@/types/domain'
+import { SEVERITY_PILL } from '@/lib/severity-colors'
 
 const SEVERITY_COLORS: Record<GuestThreat['severity'], string> = {
-  low: 'bg-blue-100 text-blue-800',
-  medium: 'bg-yellow-100 text-yellow-800',
-  high: 'bg-orange-100 text-orange-800',
-  critical: 'bg-red-100 text-red-800',
+  low: SEVERITY_PILL.low,
+  medium: SEVERITY_PILL.medium,
+  high: SEVERITY_PILL.high,
+  critical: SEVERITY_PILL.critical,
 }
 
 interface GuestThreatSectionProps {

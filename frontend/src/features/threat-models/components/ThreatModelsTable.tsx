@@ -22,6 +22,7 @@ import {
 import { DeleteThreatModelDialog } from '@/features/threat-models/components'
 import { useDeleteThreatModel } from '@/features/threat-models/api/threat-models'
 import type { ThreatModel } from '@/types'
+import { SEVERITY_PILL } from '@/lib/severity-colors'
 
 interface ThreatModelsTableProps {
   threatModels: ThreatModel[]
@@ -29,10 +30,10 @@ interface ThreatModelsTableProps {
 }
 
 const criticalityConfig: Record<string, { label: string; className: string }> = {
-  low: { label: 'Low', className: 'bg-gray-100 text-gray-800 hover:bg-gray-100' },
-  medium: { label: 'Medium', className: 'bg-blue-100 text-blue-800 hover:bg-blue-100' },
-  high: { label: 'High', className: 'bg-orange-100 text-orange-800 hover:bg-orange-100' },
-  critical: { label: 'Critical', className: 'bg-red-100 text-red-800 hover:bg-red-100' },
+  low: { label: 'Low', className: SEVERITY_PILL.low },
+  medium: { label: 'Medium', className: SEVERITY_PILL.medium },
+  high: { label: 'High', className: SEVERITY_PILL.high },
+  critical: { label: 'Critical', className: SEVERITY_PILL.critical },
 }
 
 const defaultCriticality = { label: 'Not Set', className: 'bg-gray-50 text-gray-500 hover:bg-gray-50' }

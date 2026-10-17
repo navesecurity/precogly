@@ -3,6 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { TaxonomyBadges } from '@/components/shared/TaxonomyBadges'
 import type { ReportThreatAnalysis } from '@/features/reports/types/report'
 import { ReportSection } from '../ReportSection'
+import { SEVERITY_PILL } from '@/lib/severity-colors'
 
 interface ThreatAnalysisSectionProps {
   threatAnalysis: ReportThreatAnalysis
@@ -23,10 +24,10 @@ const CM_STATUS_COLORS: Record<string, string> = {
 }
 
 const SEVERITY_COLORS: Record<string, string> = {
-  critical: 'bg-red-100 text-red-700',
-  high: 'bg-orange-100 text-orange-700',
-  medium: 'bg-yellow-100 text-yellow-700',
-  low: 'bg-green-100 text-green-700',
+  critical: SEVERITY_PILL.critical,
+  high: SEVERITY_PILL.high,
+  medium: SEVERITY_PILL.medium,
+  low: SEVERITY_PILL.low,
 }
 
 export function ThreatAnalysisSection({ threatAnalysis }: ThreatAnalysisSectionProps) {

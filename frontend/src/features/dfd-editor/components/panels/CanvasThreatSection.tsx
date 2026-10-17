@@ -33,12 +33,13 @@ import {
 import type { ComponentThreat, CountermeasureStatus } from '../../types/threat-analysis'
 import { isActiveThreat } from '@/types/triage'
 import { CONTROL_FUNCTIONS, CONTROL_NATURES } from '@/types/controls'
+import { SEVERITY_PILL } from '@/lib/severity-colors'
 
 const SEVERITY_COLORS: Record<string, string> = {
-  low: 'bg-blue-100 text-blue-800',
-  medium: 'bg-yellow-100 text-yellow-800',
-  high: 'bg-orange-100 text-orange-800',
-  critical: 'bg-red-100 text-red-800',
+  low: SEVERITY_PILL.low,
+  medium: SEVERITY_PILL.medium,
+  high: SEVERITY_PILL.high,
+  critical: SEVERITY_PILL.critical,
 }
 
 interface CanvasThreatSectionProps {
