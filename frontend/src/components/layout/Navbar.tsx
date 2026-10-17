@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { TeamSwitcher } from './TeamSwitcher'
+import naveSymbol from '@/assets/brand/nave-symbol.svg'
 
 const navItems = [
   { name: 'Dashboard', href: '/' },
@@ -46,11 +47,11 @@ export function Navbar() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
           <img
-            src="/precogly-logo.png"
-            alt="Precogly"
-            className={cn(isMinimalNav ? 'h-6 w-6' : 'h-8 w-8')}
+            src={naveSymbol}
+            alt="Nave Security"
+            className={cn('w-auto', isMinimalNav ? 'h-6' : 'h-8')}
           />
-          <span className={cn('font-semibold', isMinimalNav ? 'text-base' : 'text-lg')}>
+          <span className={cn('font-display uppercase tracking-[0.14em]', isMinimalNav ? 'text-base' : 'text-xl')}>
             Precogly
           </span>
         </Link>

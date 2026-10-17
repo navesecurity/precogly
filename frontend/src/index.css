@@ -2,6 +2,34 @@
 @import "tw-animate-css";
 @import "./theme.css";
 
+/* Self-hosted fonts (SIL Open Font Licence; licence files in src/assets/fonts). */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('./assets/fonts/inter-variable-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url('./assets/fonts/jetbrains-mono-variable-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Bellefair';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./assets/fonts/bellefair-400-latin.woff2') format('woff2');
+}
+
+/* Red used as TEXT needs a lighter shade on dark surfaces (4.5:1); fills keep the exact brand red. */
+.dark .text-primary {
+  color: var(--primary-ink);
+}
+
 @custom-variant touch (@media (hover: none));
 
 @layer base {

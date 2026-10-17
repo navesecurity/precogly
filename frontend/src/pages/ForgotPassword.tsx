@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Shield, Loader2, ArrowLeft, Mail } from 'lucide-react'
+import { Loader2, ArrowLeft, Mail } from 'lucide-react'
+import naveSymbol from '@/assets/brand/nave-symbol.svg'
 import { useRequestPasswordReset } from '@/api/auth'
 
 export function ForgotPassword() {
@@ -69,9 +70,9 @@ export function ForgotPassword() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="flex items-center gap-2 text-primary">
-              <Shield className="h-8 w-8" />
-              <span className="text-2xl font-bold">Precogly</span>
+            <div className="flex items-center gap-2.5 text-foreground">
+              <img src={naveSymbol} alt="Nave Security" className="h-9 w-auto" />
+              <span className="font-display text-3xl uppercase tracking-[0.14em]">Precogly</span>
             </div>
           </div>
           <CardTitle>Forgot your password?</CardTitle>
