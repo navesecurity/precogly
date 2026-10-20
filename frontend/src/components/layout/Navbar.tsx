@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { TeamSwitcher } from './TeamSwitcher'
-import naveSymbol from '@/assets/brand/nave-symbol.svg'
+import { brand } from '@brand/brand'
 
 const navItems = [
   { name: 'Dashboard', href: '/' },
@@ -47,17 +47,19 @@ export function Navbar() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5">
           <img
-            src={naveSymbol}
-            alt="Nave Security"
+            src={brand.symbol}
+            alt={brand.orgName || brand.productName}
             className={cn('w-auto', isMinimalNav ? 'h-7' : 'h-9')}
           />
           <span className="flex flex-col leading-none">
-            <span className={cn('font-display uppercase tracking-[0.14em]', isMinimalNav ? 'text-lg' : 'text-xl')}>
-              Precogly
+            <span className={cn(brand.wordmarkClass, isMinimalNav ? 'text-lg' : 'text-xl')}>
+              {brand.productName}
             </span>
-            <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-              Nave Security
-            </span>
+            {brand.orgName && (
+              <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                {brand.orgName}
+              </span>
+            )}
           </span>
         </Link>
 

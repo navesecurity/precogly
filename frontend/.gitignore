@@ -31,3 +31,8 @@ playwright-report
 *.njsproj
 *.sln
 *.sw?
+
+# brand profiles other than neutral are deployed from the NS3E repo
+/src/brands/*
+!/src/brands/neutral
+!/src/brands/README.md

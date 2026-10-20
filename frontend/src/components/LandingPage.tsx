@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ArrowRight, BookOpen, Github } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import naveSymbol from '@/assets/brand/nave-symbol.svg'
+import { brand } from '@brand/brand'
 
 const isGuestOnly = import.meta.env.VITE_GUEST_ONLY === 'true'
 
@@ -11,8 +11,8 @@ export function LandingPage() {
       <div className="flex flex-col items-center gap-8 max-w-md text-center">
         {/* Logo */}
         <div className="flex items-center gap-3">
-          <img src={naveSymbol} alt="Nave Security" className="h-14 w-auto" />
-          <h1 className="font-display text-4xl uppercase tracking-[0.14em]">Precogly</h1>
+          <img src={brand.symbol} alt={brand.orgName || brand.productName} className="h-14 w-auto" />
+          <h1 className={`${brand.wordmarkClass} text-4xl`}>{brand.productName}</h1>
         </div>
 
         {/* Tagline */}

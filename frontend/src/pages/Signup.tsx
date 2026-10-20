@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2, Eye, EyeOff } from 'lucide-react'
-import naveSymbol from '@/assets/brand/nave-symbol.svg'
+import { brand } from '@brand/brand'
 import type { ApiError } from '@/lib/api'
 
 export function Signup() {
@@ -77,8 +77,8 @@ export function Signup() {
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <div className="flex items-center gap-2.5 text-foreground">
-              <img src={naveSymbol} alt="Nave Security" className="h-9 w-auto" />
-              <span className="font-display text-3xl uppercase tracking-[0.14em]">Precogly</span>
+              <img src={brand.symbol} alt={brand.orgName || brand.productName} className="h-9 w-auto" />
+              <span className={`${brand.wordmarkClass} text-3xl`}>{brand.productName}</span>
             </div>
           </div>
           <CardTitle>Create an account</CardTitle>

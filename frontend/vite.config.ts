@@ -9,6 +9,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@brand": path.resolve(__dirname, `./src/brands/${process.env.VITE_BRAND || 'neutral'}`),
     },
   },
   server: {
