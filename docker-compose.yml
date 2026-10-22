@@ -31,8 +31,8 @@ services:
       - ./backend:/app/backend
       # settings.LIBRARIES_PATH defaults here; the mount keeps pack edits live.
       - ./libraries:/app/libraries
-      # NAVE: custom packs live in their own clone (see DEPLOYMENT.md), mounted into the pack tree.
-      - ./libraries/_custom-packs:/app/libraries/packs/nave-custom
+      # Custom packs live in their own clone (see DEPLOYMENT.md), mounted into the pack tree under a neutral name.
+      - ./libraries/_custom-packs:/app/libraries/packs/custom-packs
       # The MCP server is served from this process (backend/config/mcp_mount.py).
       # uv installs the workspace member editable, so this mount is what makes an
       # edit under mcp/ take effect without a rebuild.
