@@ -5,7 +5,8 @@ URL configuration for Precogly backend.
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
+from django.views.static import serve
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
@@ -120,3 +121,15 @@ if settings.DEBUG:
 
     # Serve media files in development
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# NAVE: serve uploaded media with DEBUG off. static() returns nothing unless DEBUG is
+# on, so this adds the route directly. It is off unless SERVE_MEDIA is set, which only
+# the development settings define, so upstream behaviour is unchanged.
+if not settings.DEBUG and getattr(settings, "SERVE_MEDIA", False):
+    urlpatterns += [
+        re_path(
+            r"^%s(?P<path>.*)$" % settings.MEDIA_URL.lstrip("/"),
+            serve,
+            {"document_root": settings.MEDIA_ROOT},
+        ),
+    ]

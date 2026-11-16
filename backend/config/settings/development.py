@@ -4,7 +4,14 @@ Development settings for Precogly backend.
 
 from .base import *  # noqa: F403
 
-DEBUG = True
+# NAVE: DEBUG is read from the environment so a deployed instance can turn it off
+# without leaving the development stack. The default stays True, so a checkout with
+# no setting behaves as upstream does.
+DEBUG = env.bool("DEBUG", default=True)  # noqa: F405
+
+# Uploaded media (threat model reference images) is only served by `runserver` when
+# DEBUG is on. SERVE_MEDIA keeps it served with DEBUG off. config/urls.py reads it.
+SERVE_MEDIA = env.bool("SERVE_MEDIA", default=False)  # noqa: F405
 
 # "0.0.0.0" is here so the container's runserver is reachable from the host;
 # this settings module is never loaded in production, which uses production.py.
@@ -14,7 +21,7 @@ ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0", "backend"]  # noqa: S104
 INSTALLED_APPS += ["django_extensions"]  # noqa: F405
 
 # Set DEBUG_TOOLBAR=false in .env to turn it off for a machine.
-DEBUG_TOOLBAR = env.bool("DEBUG_TOOLBAR", default=True)  # noqa: F405
+DEBUG_TOOLBAR = env.bool("DEBUG_TOOLBAR", default=DEBUG)  # noqa: F405
 
 if DEBUG_TOOLBAR:
     INSTALLED_APPS += ["debug_toolbar"]
