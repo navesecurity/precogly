@@ -8,7 +8,6 @@ from .models import (
     OutOfScopeItem,
     ThreatModel,
     ThreatModelFramework,
-    ThreatModelLibraryPack,
     ThreatModelOrgsystem,
     ThreatModelReferenceImage,
     ThreatModelRelationship,
@@ -958,17 +957,10 @@ class ThreatModelCreateSerializer(serializers.ModelSerializer):
                 relation_type=ThreatModelRelationship.RelationType.RELATED_TO,
             )
 
-        # Auto-connect all imported packs
-        from apps.packs.models import LibraryPack
+        # Connect only the packs allowed on every new model (settings.PACK_AUTO_CONNECT_SLUGS).
+        from apps.packs.auto_connect import connect_default_packs
 
-        imported_packs = LibraryPack.objects.all()
-        ThreatModelLibraryPack.objects.bulk_create(
-            [
-                ThreatModelLibraryPack(threat_model=threat_model, library_pack=pack)
-                for pack in imported_packs
-            ],
-            ignore_conflicts=True,
-        )
+        connect_default_packs(threat_model)
 
         return threat_model
 

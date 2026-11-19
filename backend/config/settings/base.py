@@ -170,6 +170,15 @@ MEDIA_ROOT = BASE_DIR / "media"
 # catalog empty, which reads as an empty database rather than as a missing mount.
 LIBRARIES_PATH = Path(env("LIBRARIES_PATH", default=str(BASE_DIR.parent / "libraries")))
 
+# Packs connected automatically to a newly created threat model, as a comma-separated list
+# of pack slugs. Empty (the default) connects none. A pack that holds one client's content
+# must never be listed here: an automatic connection puts its threats on every new model.
+PACK_AUTO_CONNECT_SLUGS = [
+    slug.strip()
+    for slug in env("PACK_AUTO_CONNECT_SLUGS", default="").split(",")
+    if slug.strip()
+]
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
